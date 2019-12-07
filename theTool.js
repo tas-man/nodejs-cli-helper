@@ -7,11 +7,12 @@ let eventEmitter = new _events();
 
 let theTool = {};
 
-const acceptedCommands = ['help', 'q', 'base64enc'];
-const acceptedCommandDesc = {
+const commands = ['help', 'base64enc', 'base64dec', 'q'];
+const commandDescription = {
   help: 'Show this manual',
-  q: 'Quit current theTool session',
-  base64enc: 'Base64 encode string passed as parameter. (Expects 1 parameter)'
+  base64enc: 'Base64 encode string passed as parameter. (Expects 1 parameter)',
+  base64dec: 'Base64 decode string passed as parameter. (Expects 1 parameter)',
+  q: 'Quit current theTool session'
 };
 
 // -----------------------------
@@ -29,6 +30,10 @@ eventEmitter.on('base64enc', input => {
   theTool.response.base64enc(input);
 });
 
+eventEmitter.on('base64dec', input => {
+  theTool.response.base64dec(input);
+});
+
 // -----------------------------
 // RESPONSES
 
@@ -40,21 +45,31 @@ theTool.response.help = () => {
   theTool.addHorizontal();
   theTool.centerText('LIST OF COMMANDS', helpMenuColor);
   theTool.addHorizontal();
-  acceptedCommands.map(cmd => {
+  commands.map(cmd => {
     theTool.addVertical();
     console.log(
-      chalk[helpMenuColor](`          ${cmd} - ${acceptedCommandDesc[cmd]}`)
+      chalk[helpMenuColor](`\t\t\t${cmd} - ${commandDescription[cmd]}`)
     );
   });
-};
-
-theTool.response.exit = () => {
   theTool.addVertical();
 };
 
 theTool.response.base64enc = str => {
   const parameter = str.substr(10);
   console.log(chalk.magenta(Buffer.from(parameter).toString('base64')));
+};
+
+theTool.response.base64dec = str => {
+  const parameter = str.substr(10);
+  console.log(
+    chalk.magenta(Buffer.from(parameter, 'base64').toString('ascii'))
+  );
+};
+
+theTool.response.exit = () => {
+  theTool.addVertical();
+  console.log(chalk.red('TheTool session was terminated'));
+  process.exit(0);
 };
 
 // -----------------------------------------------------------------------------
@@ -68,8 +83,7 @@ theTool.addVertical = lines => {
 };
 
 theTool.addHorizontal = () => {
-  // Get available screen width
-  let width = process.stdout.columns;
+  const width = process.stdout.columns;
   let line = '';
   for (i = 0; i < width; i++) {
     line += '-';
@@ -79,10 +93,8 @@ theTool.addHorizontal = () => {
 
 theTool.centerText = (str, color) => {
   str = typeof str == 'string' && str.trim().length > 0 ? str.trim() : '';
-  // Get current CLI screen width
-  let width = process.stdout.columns;
-  // Calculate left padding
-  let leftPadding = Math.floor((width - str.length) / 2);
+  const width = process.stdout.columns;
+  const leftPadding = Math.floor((width - str.length) / 2);
   let line = '';
   for (i = 0; i < leftPadding; i++) {
     line += ' ';
@@ -95,20 +107,19 @@ theTool.centerText = (str, color) => {
 // USER INPUT PARSING
 
 theTool.parseInput = input => {
-  let isCommandMatch = false;
-  let str =
+  let isKnownCommand = false;
+  const str =
     typeof input == 'string' && input.trim().length > 0 ? input.trim() : false;
   // Ignore empty input line
   if (str) {
-    acceptedCommands.some(cmd => {
-      // Emit custom event on recognized command input
+    commands.some(cmd => {
       if (str.toLowerCase().indexOf(cmd) > -1) {
-        isCommandMatch = true;
+        isKnownCommand = true;
         eventEmitter.emit(cmd, str);
         return true;
       }
     });
-    if (!isCommandMatch) {
+    if (!isKnownCommand) {
       console.log(chalk.red('Unrecognized command, please try again!'));
     }
   }

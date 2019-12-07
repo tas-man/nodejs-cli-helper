@@ -1,9 +1,10 @@
 {
-  "name": "helpers",
+  "name": "thetool",
   "version": "1.0.0",
   "description": "",
   "main": "theTool.js",
   "scripts": {
+    "start": "node theTool.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
